@@ -14,13 +14,103 @@ provider "aws" {
 }
 
 # TODO: 
-#   1. ALB
-#   2. Target group
+#   1. Target group
 #       - elasticsearch
 #       - kibana
 #       - fluentd
+#   2. ALB
+#       - sg & subnets
+#       - Listener rule
+#       - Connect to target group
 #   3. Task definition
 #   4. ECS Service
+#       - Connect to target group
+
+resource "aws_lb" "es-lb" {
+  name               = "es-lb-tf"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = ["${aws_security_group.lb_sg.id}"]
+  subnets            = ["${aws_subnet.public.*.id}"]
+}
+
+resource "aws_lb_target_group" "es" {
+  name     = "tf-lb-tg-es"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = "${var.vpc_id}"
+}
+
+resource "aws_lb_target_group" "fluentd" {
+  name     = "tf-lb-tg-fluentd"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = "${var.vpc_id}"
+}
+
+resource "aws_lb_target_group" "kibana" {
+  name     = "tf-lb-tg-kibana"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = "${var.vpc_id}"
+}
+
+resource "aws_lb_listener" "es" {
+  load_balancer_arn = "${aws_lb.front_end.arn}"
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    target_group_arn = "${aws_lb_target_group.front_end.arn}"
+    type             = "forward"
+  }
+}
+
+resource "aws_lb_listener_rule" "es" {
+  listener_arn = "${aws_lb_listener.es.arn}"
+  priority     = 99
+
+  action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.es.arn}"
+  }
+
+  condition {
+    field  = "host-header"
+    values = ["elasticsearch"]
+  }
+}
+
+resource "aws_lb_listener_rule" "kibana" {
+  listener_arn = "${aws_lb_listener.es.arn}"
+  priority     = 99
+
+  action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.kibana.arn}"
+  }
+
+  condition {
+    field  = "host-header"
+    values = ["${var.kibana_host}"]
+  }
+}
+
+resource "aws_lb_listener_rule" "fluentd" {
+  listener_arn = "${aws_lb_listener.es.arn}"
+  priority     = 99
+
+  action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.fluentd.arn}"
+  }
+
+  condition {
+    field  = "host-header"
+    values = ["${var.fluentd_host}"]
+  }
+}
+
 /*
 resource "aws_internet_gateway" "default" {
   vpc_id = "${aws_vpc.default.id}"

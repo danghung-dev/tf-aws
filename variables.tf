@@ -1,4 +1,8 @@
 variable "aws_key_path" {}
+variable "vpc_id" {}
+variable "kibana_host" {}
+variable "fluentd_host" {}
+
 variable "instance_type" {}
 variable "aws_key_name" {}
 variable "availability_zone" {}
