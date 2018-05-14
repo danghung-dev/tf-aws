@@ -1,21 +1,21 @@
 [
   {
-    "image": "danghung/fluentd:aws",
-    "name": "fluentd",
+    "image": "docker.elastic.co/kibana/kibana-oss:6.2.3",
+    "name": "kibana",
     "essential": true,
     "portMappings": [
       {
         "hostPort": 0,
         "protocol": "tcp",
-        "containerPort": 9880
+        "containerPort": 5601
       }
     ],
     "memoryReservation": 256,
     "mountPoints": [
       {
         "readOnly": null,
-        "containerPath": "/fluentd",
-        "sourceVolume": "flconfig"
+        "containerPath": "/usr/share/kibana/config",
+        "sourceVolume": "kbnconfig"
       }
     ],
     "logConfiguration": {

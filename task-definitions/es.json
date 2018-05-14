@@ -5,12 +5,12 @@
     "essential": true,
     "portMappings": [
       {
-        "hostPort": 9200,
+        "hostPort": 0,
         "protocol": "tcp",
         "containerPort": 9200
       },
       {
-        "hostPort": 9300,
+        "hostPort": 0,
         "protocol": "tcp",
         "containerPort": 9300
       }

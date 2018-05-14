@@ -13,7 +13,7 @@ provider "aws" {
   region = "${var.aws_region}"
 }
 
-# TODO: 
+# TODO:
 #   1. Target group
 #       - elasticsearch
 #       - kibana
@@ -82,6 +82,10 @@ resource "aws_lb_target_group" "fluentd" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = "${var.vpc_id}"
+
+  health_check = {
+    path = "/?json=a"
+  }
 }
 
 resource "aws_lb_target_group" "kibana" {

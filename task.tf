@@ -1,4 +1,4 @@
-resource "null_resource" "efk_config_data2" {
+resource "null_resource" "efk_config_data1" {
   connection {
     host        = "54.169.184.38"
     type        = "ssh"
@@ -11,11 +11,19 @@ resource "null_resource" "efk_config_data2" {
     destination = "/home/ec2-user/fluent.conf"
   }
 
+  provisioner "file" {
+    source      = "kibana/kibana.yml"
+    destination = "/home/ec2-user/kibana.yml"
+  }
+
   provisioner "remote-exec" {
     inline = [
-      "sudo rm -rf /usr/share/fluentd",
-      "sudo mkdir -p /usr/share/fluentd",
-      "sudo mv /home/ec2-user/fluent.conf /usr/share/fluentd/fluent.conf",
+      "sudo mkdir -p /usr/share/fluentd/etc",
+      "sudo mkdir -p /usr/share/fluentd/plugins",
+      "sudo mkdir -p /usr/share/kibana",
+      "sudo rm -rf /usr/share/fluentd/plugins/in_http_healthcheck.rb",
+      "sudo mv /home/ec2-user/fluent.conf /usr/share/fluentd/etc/fluent.conf",
+      "sudo mv /home/ec2-user/kibana.yml /usr/share/kibana/kibana.yml",
     ]
   }
 
@@ -32,7 +40,6 @@ data "aws_ecs_cluster" "ecs-sml" {
 resource "aws_ecs_task_definition" "es" {
   family                = "tf-elasticsearch"
   container_definitions = "${file("task-definitions/es.json")}"
-  network_mode          = "awsvpc"
 
   volume {
     name      = "esdata"
@@ -51,19 +58,14 @@ resource "aws_ecs_service" "es" {
   task_definition = "${aws_ecs_task_definition.es.arn}"
   desired_count   = 1
 
-  network_configuration = {
-    subnets         = ""
-    security_groups = ""
-  }
-
   # iam_role        = "${aws_iam_role.foo.arn}"
   # depends_on      = ["aws_iam_role_policy.foo"]
 
-  # load_balancer {
-  #   target_group_arn = "${aws_lb_target_group.es.arn}"
-  #   container_name   = "elasticsearch"
-  #   container_port   = 9200
-  # }
+  load_balancer {
+    target_group_arn = "${aws_lb_target_group.es.arn}"
+    container_name   = "elasticsearch"
+    container_port   = 9200
+  }
 }
 
 resource "aws_ecs_task_definition" "fluentd" {
@@ -89,5 +91,31 @@ resource "aws_ecs_service" "fluentd" {
     target_group_arn = "${aws_lb_target_group.fluentd.arn}"
     container_name   = "fluentd"
     container_port   = 9880
+  }
+}
+
+resource "aws_ecs_task_definition" "kibana" {
+  family                = "tf-kibana"
+  container_definitions = "${file("task-definitions/kibana.json")}"
+
+  volume {
+    name      = "kbnconfig"
+    host_path = "/usr/share/kibana/"
+  }
+}
+
+resource "aws_ecs_service" "kibana" {
+  name            = "kibana"
+  cluster         = "${data.aws_ecs_cluster.ecs-sml.arn}"
+  task_definition = "${aws_ecs_task_definition.kibana.arn}"
+  desired_count   = 1
+
+  # iam_role        = "${aws_iam_role.foo.arn}"
+  # depends_on      = ["aws_iam_role_policy.foo"]
+
+  load_balancer {
+    target_group_arn = "${aws_lb_target_group.kibana.arn}"
+    container_name   = "kibana"
+    container_port   = 5601
   }
 }
