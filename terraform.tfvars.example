@@ -3,6 +3,10 @@ availability_zone = "ap-southeast-1a"
 aws_key_path = "/Users/danghung/projects/smartlog/aws/keyexample.pem"
 aws_key_name = "jenkins"
 instance_type = "t2.nano"
-vpc_id = ""
-kibana_host = ""
-fluentd_host = ""
+vpc_id = "vpc-12f79075"
+
+kibana_host = "kibana.danghung.xyz"
+
+fluentd_host = "fluentd.danghung.xyz"
+
+ecs_cluster_name = "smartlog"

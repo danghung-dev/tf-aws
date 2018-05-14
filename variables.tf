@@ -2,6 +2,7 @@ variable "aws_key_path" {}
 variable "vpc_id" {}
 variable "kibana_host" {}
 variable "fluentd_host" {}
+variable "ecs_cluster_name" {}
 
 variable "instance_type" {}
 variable "aws_key_name" {}

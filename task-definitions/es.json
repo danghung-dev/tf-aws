@@ -1,0 +1,46 @@
+[
+  {
+    "image": "docker.elastic.co/elasticsearch/elasticsearch-oss:6.2.3",
+    "name": "elasticsearch",
+    "essential": true,
+    "portMappings": [
+      {
+        "hostPort": 9200,
+        "protocol": "tcp",
+        "containerPort": 9200
+      },
+      {
+        "hostPort": 9300,
+        "protocol": "tcp",
+        "containerPort": 9300
+      }
+    ],
+    "environment": [
+      {
+        "name": "ES_JAVA_OPTS",
+        "value": "-Xms512m -Xmx512m"
+      }
+    ],
+    "memoryReservation": 512,
+    "mountPoints": [
+      {
+        "readOnly": null,
+        "containerPath": "/usr/share/elasticsearch/data/",
+        "sourceVolume": "esdata"
+      },
+      {
+        "readOnly": null,
+        "containerPath": "/usr/share/elasticsearch/config/elasticsearch.yml",
+        "sourceVolume": "esconfig"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "ecs-log",
+        "awslogs-region": "ap-southeast-1",
+        "awslogs-stream-prefix": "es"
+      }
+    }
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "image": "danghung/fluentd:aws",
+    "name": "fluentd",
+    "essential": true,
+    "portMappings": [
+      {
+        "hostPort": 0,
+        "protocol": "tcp",
+        "containerPort": 9880
+      }
+    ],
+    "memoryReservation": 256,
+    "mountPoints": [
+      {
+        "readOnly": null,
+        "containerPath": "/fluentd/etc",
+        "sourceVolume": "flconfig"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "ecs-log",
+        "awslogs-region": "ap-southeast-1",
+        "awslogs-stream-prefix": "es"
+      }
+    }
+  }
+]

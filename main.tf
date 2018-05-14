@@ -26,12 +26,48 @@ provider "aws" {
 #   4. ECS Service
 #       - Connect to target group
 
+resource "aws_security_group" "es-alb" {
+  name        = "es-alb-sg"
+  description = "Allow incoming HTTP connections."
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  vpc_id = "${var.vpc_id}"
+
+  tags {
+    Name = "ES-ELB-SG"
+  }
+}
+
 resource "aws_lb" "es-lb" {
   name               = "es-lb-tf"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = ["${aws_security_group.lb_sg.id}"]
-  subnets            = ["${aws_subnet.public.*.id}"]
+  security_groups    = ["${aws_security_group.es-alb.id}"]
+  subnets            = ["${data.aws_subnet_ids.public.ids}"]
+}
+
+data "aws_subnet_ids" "public" {
+  vpc_id = "${var.vpc_id}"
 }
 
 resource "aws_lb_target_group" "es" {
@@ -56,34 +92,32 @@ resource "aws_lb_target_group" "kibana" {
 }
 
 resource "aws_lb_listener" "es" {
-  load_balancer_arn = "${aws_lb.front_end.arn}"
+  load_balancer_arn = "${aws_lb.es-lb.arn}"
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
-    target_group_arn = "${aws_lb_target_group.front_end.arn}"
-    type             = "forward"
-  }
-}
-
-resource "aws_lb_listener_rule" "es" {
-  listener_arn = "${aws_lb_listener.es.arn}"
-  priority     = 99
-
-  action {
-    type             = "forward"
     target_group_arn = "${aws_lb_target_group.es.arn}"
-  }
-
-  condition {
-    field  = "host-header"
-    values = ["elasticsearch"]
+    type             = "forward"
   }
 }
+
+# resource "aws_lb_listener_rule" "es" {
+#   listener_arn = "${aws_lb_listener.es.arn}"
+
+#   action {
+#     type             = "forward"
+#     target_group_arn = "${aws_lb_target_group.es.arn}"
+#   }
+
+#   condition {
+#     field  = "host-header"
+#     values = ["elasticsearch"]
+#   }
+# }
 
 resource "aws_lb_listener_rule" "kibana" {
   listener_arn = "${aws_lb_listener.es.arn}"
-  priority     = 99
 
   action {
     type             = "forward"
@@ -98,7 +132,6 @@ resource "aws_lb_listener_rule" "kibana" {
 
 resource "aws_lb_listener_rule" "fluentd" {
   listener_arn = "${aws_lb_listener.es.arn}"
-  priority     = 99
 
   action {
     type             = "forward"
