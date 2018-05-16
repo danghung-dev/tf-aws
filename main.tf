@@ -3,7 +3,9 @@ terraform = {
 
   backend "s3" {
     bucket = "sml-terraform"
-    key    = "tf-aws.tfstate"
+
+    # key    = "${var.project_name}-${var.environment}"
+    key    = "tf-aws"
     region = "ap-southeast-1"
   }
 }
@@ -64,6 +66,24 @@ resource "aws_lb" "es-lb" {
   load_balancer_type = "application"
   security_groups    = ["${aws_security_group.es-alb.id}"]
   subnets            = ["${data.aws_subnet_ids.public.ids}"]
+}
+
+data "aws_route53_zone" "danghung-xyz" {
+  name = "danghung.xyz."
+
+  # private_zone = true
+}
+
+resource "aws_route53_record" "log" {
+  zone_id = "${data.aws_route53_zone.danghung-xyz.zone_id}"
+  name    = "log.danghung.xyz"
+  type    = "A"
+
+  alias {
+    name                   = "${aws_lb.es-lb.dns_name}"
+    zone_id                = "${aws_lb.es-lb.zone_id}"
+    evaluate_target_health = false
+  }
 }
 
 data "aws_subnet_ids" "public" {
@@ -129,8 +149,8 @@ resource "aws_lb_listener_rule" "kibana" {
   }
 
   condition {
-    field  = "host-header"
-    values = ["${var.kibana_host}"]
+    field  = "path-pattern"
+    values = ["/kibana/*"]
   }
 }
 
@@ -143,8 +163,8 @@ resource "aws_lb_listener_rule" "fluentd" {
   }
 
   condition {
-    field  = "host-header"
-    values = ["${var.fluentd_host}"]
+    field  = "path-pattern"
+    values = ["/fluentd/*"]
   }
 }
 

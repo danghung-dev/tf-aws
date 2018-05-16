@@ -1,3 +1,11 @@
+variable "project_name" {
+  default = "tf-aws-elk"
+}
+
+variable "environment" {
+  default = "test"
+}
+
 variable "aws_key_path" {}
 variable "vpc_id" {}
 variable "kibana_host" {}
