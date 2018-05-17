@@ -1,4 +1,4 @@
-resource "null_resource" "efk_config_data1" {
+resource "null_resource" "efk_config_data" {
   connection {
     host        = "54.169.184.38"
     type        = "ssh"
@@ -66,6 +66,7 @@ resource "aws_ecs_service" "es" {
     container_name   = "elasticsearch"
     container_port   = 9200
   }
+  depends_on = ["aws_lb.es-lb"]
 }
 
 resource "aws_ecs_task_definition" "fluentd" {
@@ -92,6 +93,7 @@ resource "aws_ecs_service" "fluentd" {
     container_name   = "fluentd"
     container_port   = 9880
   }
+  depends_on = ["aws_lb.es-lb"]
 }
 
 resource "aws_ecs_task_definition" "kibana" {
@@ -118,4 +120,5 @@ resource "aws_ecs_service" "kibana" {
     container_name   = "kibana"
     container_port   = 5601
   }
+  depends_on = ["aws_lb.es-lb"]
 }

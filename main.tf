@@ -74,9 +74,38 @@ data "aws_route53_zone" "danghung-xyz" {
   # private_zone = true
 }
 
+data "aws_route53_zone" "elasticsearch" {
+  name         = "elasticsearch."
+  private_zone = true
+}
+
 resource "aws_route53_record" "log" {
   zone_id = "${data.aws_route53_zone.danghung-xyz.zone_id}"
-  name    = "log.danghung.xyz"
+  name    = "fluentd.log.danghung.xyz"
+  type    = "A"
+
+  alias {
+    name                   = "${aws_lb.es-lb.dns_name}"
+    zone_id                = "${aws_lb.es-lb.zone_id}"
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "kibana" {
+  zone_id = "${data.aws_route53_zone.danghung-xyz.zone_id}"
+  name    = "kibana.log.danghung.xyz"
+  type    = "A"
+
+  alias {
+    name                   = "${aws_lb.es-lb.dns_name}"
+    zone_id                = "${aws_lb.es-lb.zone_id}"
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "elasticsearch" {
+  zone_id = "${data.aws_route53_zone.elasticsearch.zone_id}"
+  name    = "elasticsearch"
   type    = "A"
 
   alias {
@@ -149,8 +178,8 @@ resource "aws_lb_listener_rule" "kibana" {
   }
 
   condition {
-    field  = "path-pattern"
-    values = ["/kibana/*"]
+    field  = "host-header"
+    values = ["kibana.log.danghung.xyz"]
   }
 }
 
@@ -163,8 +192,8 @@ resource "aws_lb_listener_rule" "fluentd" {
   }
 
   condition {
-    field  = "path-pattern"
-    values = ["/fluentd/*"]
+    field  = "host-header"
+    values = ["fluentd.log.danghung.xyz"]
   }
 }
 
