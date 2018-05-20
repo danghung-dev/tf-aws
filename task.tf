@@ -52,6 +52,48 @@ resource "aws_ecs_task_definition" "es" {
   }
 }
 
+resource "aws_lb" "es-internal-lb" {
+  name               = "tf-internal-es-lb"
+  internal           = true
+  load_balancer_type = "application"
+  security_groups    = ["${aws_security_group.es-alb.id}"]
+  subnets            = ["${data.aws_subnet_ids.public.ids}"]
+}
+
+resource "aws_route53_record" "elasticsearch" {
+  zone_id = "${data.aws_route53_zone.elasticsearch.zone_id}"
+  name    = "elasticsearch"
+  type    = "A"
+
+  alias {
+    name                   = "${aws_lb.es-internal-lb.dns_name}"
+    zone_id                = "${aws_lb.es-internal-lb.zone_id}"
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_lb_listener" "es-internal" {
+  load_balancer_arn = "${aws_lb.es-internal-lb.arn}"
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    target_group_arn = "${aws_lb_target_group.es.arn}"
+    type             = "forward"
+  }
+}
+
+resource "aws_lb_target_group" "es" {
+  name     = "tf-lb-tg-es"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = "${var.vpc_id}"
+
+  health_check = {
+    path = "/_cluster/health"
+  }
+}
+
 resource "aws_ecs_service" "es" {
   name            = "elasticsearch"
   cluster         = "${data.aws_ecs_cluster.ecs-sml.arn}"

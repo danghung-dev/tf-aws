@@ -103,27 +103,8 @@ resource "aws_route53_record" "kibana" {
   }
 }
 
-resource "aws_route53_record" "elasticsearch" {
-  zone_id = "${data.aws_route53_zone.elasticsearch.zone_id}"
-  name    = "elasticsearch"
-  type    = "A"
-
-  alias {
-    name                   = "${aws_lb.es-lb.dns_name}"
-    zone_id                = "${aws_lb.es-lb.zone_id}"
-    evaluate_target_health = false
-  }
-}
-
 data "aws_subnet_ids" "public" {
   vpc_id = "${var.vpc_id}"
-}
-
-resource "aws_lb_target_group" "es" {
-  name     = "tf-lb-tg-es"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = "${var.vpc_id}"
 }
 
 resource "aws_lb_target_group" "fluentd" {
@@ -142,6 +123,10 @@ resource "aws_lb_target_group" "kibana" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = "${var.vpc_id}"
+
+  health_check = {
+    path = "/status"
+  }
 }
 
 resource "aws_lb_listener" "es" {
@@ -150,13 +135,13 @@ resource "aws_lb_listener" "es" {
   protocol          = "HTTP"
 
   default_action {
-    target_group_arn = "${aws_lb_target_group.esdefault.arn}"
+    target_group_arn = "${aws_lb_target_group.es-nowhere.arn}"
     type             = "forward"
   }
 }
 
-resource "aws_lb_target_group" "esdefault" {
-  name     = "tf-lb-tg-esdefault"
+resource "aws_lb_target_group" "es-nowhere" {
+  name     = "tf-lb-tg-nowhere"
   port     = 80
   protocol = "HTTP"
   vpc_id   = "${var.vpc_id}"
