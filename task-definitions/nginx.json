@@ -1,0 +1,23 @@
+[
+  {
+    "image": "danghung/nginx-https-redirect",
+    "name": "nginx-https",
+    "essential": true,
+    "portMappings": [
+      {
+        "hostPort": 0,
+        "protocol": "tcp",
+        "containerPort": 80
+      }
+    ],
+    "memoryReservation": 256,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "ecs-log",
+        "awslogs-region": "ap-southeast-1",
+        "awslogs-stream-prefix": "es"
+      }
+    }
+  }
+]

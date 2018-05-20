@@ -11,6 +11,7 @@ variable "vpc_id" {}
 variable "kibana_host" {}
 variable "fluentd_host" {}
 variable "ecs_cluster_name" {}
+variable "ssl_certificate_arn" {}
 
 variable "instance_type" {}
 variable "aws_key_name" {}

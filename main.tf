@@ -129,10 +129,34 @@ resource "aws_lb_target_group" "kibana" {
   }
 }
 
-resource "aws_lb_listener" "es" {
+resource "aws_lb_target_group" "nginx" {
+  name     = "tf-lb-tg-nginx"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = "${var.vpc_id}"
+
+  health_check = {
+    path = "/elb-status"
+  }
+}
+
+resource "aws_lb_listener" "es-http" {
   load_balancer_arn = "${aws_lb.es-lb.arn}"
   port              = "80"
   protocol          = "HTTP"
+
+  default_action {
+    target_group_arn = "${aws_lb_target_group.nginx.arn}"
+    type             = "forward"
+  }
+}
+
+resource "aws_lb_listener" "es" {
+  load_balancer_arn = "${aws_lb.es-lb.arn}"
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "${var.ssl_certificate_arn}"
 
   default_action {
     target_group_arn = "${aws_lb_target_group.es-nowhere.arn}"
@@ -146,20 +170,6 @@ resource "aws_lb_target_group" "es-nowhere" {
   protocol = "HTTP"
   vpc_id   = "${var.vpc_id}"
 }
-
-# resource "aws_lb_listener_rule" "es" {
-#   listener_arn = "${aws_lb_listener.es.arn}"
-
-#   action {
-#     type             = "forward"
-#     target_group_arn = "${aws_lb_target_group.es.arn}"
-#   }
-
-#   condition {
-#     field  = "host-header"
-#     values = ["elasticsearch"]
-#   }
-# }
 
 resource "aws_lb_listener_rule" "kibana" {
   listener_arn = "${aws_lb_listener.es.arn}"

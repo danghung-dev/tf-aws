@@ -164,3 +164,26 @@ resource "aws_ecs_service" "kibana" {
   }
   depends_on = ["aws_lb.es-lb"]
 }
+
+# nginx
+resource "aws_ecs_task_definition" "nginx" {
+  family                = "tf-nginx"
+  container_definitions = "${file("task-definitions/nginx.json")}"
+}
+
+resource "aws_ecs_service" "nginx" {
+  name            = "es-nginx"
+  cluster         = "${data.aws_ecs_cluster.ecs-sml.arn}"
+  task_definition = "${aws_ecs_task_definition.nginx.arn}"
+  desired_count   = 1
+
+  # iam_role        = "${aws_iam_role.foo.arn}"
+  # depends_on      = ["aws_iam_role_policy.foo"]
+
+  load_balancer {
+    target_group_arn = "${aws_lb_target_group.nginx.arn}"
+    container_name   = "nginx-https"
+    container_port   = 80
+  }
+  depends_on = ["aws_lb.es-lb"]
+}

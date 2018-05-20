@@ -10,3 +10,4 @@ kibana_host = "kibana.danghung.xyz"
 fluentd_host = "fluentd.danghung.xyz"
 
 ecs_cluster_name = "smartlog"
+ssl_certificate_arn = ""
